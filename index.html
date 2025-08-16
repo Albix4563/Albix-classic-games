@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Albix Classic Games - Cosmic Collection</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --text-glow: rgba(138, 43, 226, 0.5);
+            
+            --container-width: min(95vw, 1400px);
+            --base-font: clamp(14px, 1.5vw, 18px);
+            --card-width: min(300px, 80vw);
+            --card-height: 200px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+            color: #ffffff;
+            transition: background 0.5s ease, color 0.5s ease;
+            font-size: var(--base-font);
+        }
+
+        body.light-theme {
+            background: #f5f5f5;
+            color: #333333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            z-index: 10;
+        }
+
+        .main-title {
+            font-size: clamp(2.5em, 6vw, 4em);
+            font-weight: bold;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px var(--text-glow);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        .subtitle {
+            font-size: clamp(1.2em, 3vw, 1.8em);
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 30px;
+        }
+
+        body.light-theme .subtitle {
+            color: rgba(51, 51, 51, 0.8);
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 20px var(--text-glow), 0 0 30px var(--text-glow), 0 0 40px var(--text-glow);
+            }
+            to {
+                text-shadow: 0 0 30px var(--text-glow), 0 0 40px var(--text-glow), 0 0 50px var(--text-glow);
+            }
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--primary-gradient);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 1400px;
+            width: 100%;
+            z-index: 10;
+            margin: 0 auto;
+            padding: 0 30px;
+        }
+
+        .game-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            min-height: 350px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        body.light-theme .game-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(138, 43, 226, 0.3);
+            border-color: rgba(138, 43, 226, 0.5);
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .game-card:hover::before {
+            left: 100%;
+        }
+
+        .game-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 0 10px currentColor);
+        }
+
+        .game-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .game-description {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.95em;
+            line-height: 1.6;
+            margin: 15px 0;
+            flex-grow: 1;
+            text-align: justify;
+        }
+
+        body.light-theme .game-description {
+            color: rgba(51, 51, 51, 0.7);
+        }
+
+        .play-button {
+            background: var(--secondary-gradient);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: auto;
+        }
+
+        .play-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .footer {
+            margin-top: 60px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9em;
+        }
+
+        body.light-theme .footer {
+            color: rgba(51, 51, 51, 0.5);
+        }
+
+        /* Particle animation */
+        .particle {
+            position: fixed;
+            background: rgba(138, 43, 226, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float linear infinite;
+            z-index: 1;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        body.light-theme .particle {
+            background: rgba(138, 43, 226, 0.3);
+        }
+
+        .language-selector {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .lang-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .lang-btn.active {
+            background: var(--primary-gradient);
+            border-color: rgba(138, 43, 226, 0.5);
+        }
+
+        body.light-theme .lang-btn {
+            background: rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            color: #333;
+        }
+
+        body.light-theme .lang-btn:hover {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        /* Responsive design */
+        @media (max-width: 1200px) {
+            .games-grid {
+                max-width: 1000px;
+                gap: 18px;
+                padding: 0 25px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .games-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 0 20px;
+                max-width: 600px;
+            }
+            
+            .header {
+                margin-bottom: 30px;
+            }
+            
+            .game-card {
+                padding: 25px;
+                min-height: 300px;
+            }
+            
+            .language-selector {
+                top: 15px;
+                left: 15px;
+            }
+        }
+        
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .games-grid {
+                gap: 15px;
+            }
+            
+            .game-card {
+                padding: 20px;
+                min-height: 260px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+            
+            .theme-toggle {
+                top: 15px;
+                right: 15px;
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+            
+            .game-card {
+                min-height: 280px;
+                padding: 20px;
+            }
+            
+            .games-grid {
+                padding: 0 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="language-selector">
+        <button class="lang-btn active" onclick="setLanguage('en')" data-en="EN" data-zh="EN">EN</button>
+        <button class="lang-btn" onclick="setLanguage('zh')" data-en="中文" data-zh="中文">中文</button>
+    </div>
+    
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" data-en="🌙 Dark Mode" data-zh="🌙 深色模式">🌙 Dark Mode</button>
+    
+    <div class="header">
+        <h1 class="main-title" id="mainTitle" data-en="Albix Classic Games" data-zh="Albix 经典游戏">Albix Classic Games</h1>
+        <p class="subtitle" id="subtitle" data-en="Cosmic Collection - Four Epic Mini-Games" data-zh="宇宙收藏 - 四款史诗小游戏">Cosmic Collection - Four Epic Mini-Games</p>
+    </div>
+
+    <div class="games-grid">
+        <div class="game-card" onclick="window.location.href='ChessGame.html'">
+            <div>
+                <div class="game-icon">♛</div>
+                <h2 class="game-title" data-en="Royal Chess" data-zh="皇家国际象棋">Royal Chess</h2>
+                <p class="game-description" data-en="Experience the ultimate chess game with stunning cosmic visuals and advanced AI. Choose between Player vs Player mode or challenge our intelligent AI with multiple difficulty levels. Features complete chess rules including castling, en passant, and pawn promotion. Perfect for both beginners and chess masters." data-zh="体验终极国际象棋游戏，拥有令人惊叹的宇宙视觉效果和先进的人工智能。选择玩家对战模式或挑战我们的智能AI，具有多个难度级别。包含完整的国际象棋规则，包括王车易位、吃过路兵和兵的升变。适合初学者和国际象棋大师。">Experience the ultimate chess game with stunning cosmic visuals and advanced AI. Choose between Player vs Player mode or challenge our intelligent AI with multiple difficulty levels. Features complete chess rules including castling, en passant, and pawn promotion. Perfect for both beginners and chess masters.</p>
+            </div>
+            <a href="ChessGame.html" class="play-button" data-en="Play Chess" data-zh="开始下棋">Play Chess</a>
+        </div>
+
+        <div class="game-card" onclick="window.location.href='TetrisGame.html'">
+            <div>
+                <div class="game-icon">🧩</div>
+                <h2 class="game-title" data-en="Cosmic Tetris" data-zh="宇宙俄罗斯方块">Cosmic Tetris</h2>
+                <p class="game-description" data-en="Stack blocks and clear lines in this space-themed version of the beloved puzzle game. Features smooth controls, stunning particle effects, and progressive difficulty. Watch as the cosmic background comes alive with animated particles while you achieve new high scores. Includes ghost piece preview and hold functionality." data-zh="在这个太空主题版本的经典益智游戏中堆叠方块并清除行。具有流畅的控制、令人惊叹的粒子效果和渐进式难度。当您创造新的高分时，观看宇宙背景随着动画粒子而生动起来。包括幽灵方块预览和保持功能。">Stack blocks and clear lines in this space-themed version of the beloved puzzle game. Features smooth controls, stunning particle effects, and progressive difficulty. Watch as the cosmic background comes alive with animated particles while you achieve new high scores. Includes ghost piece preview and hold functionality.</p>
+            </div>
+            <a href="TetrisGame.html" class="play-button" data-en="Play Tetris" data-zh="开始俄罗斯方块">Play Tetris</a>
+        </div>
+
+        <div class="game-card" onclick="window.location.href='TrisGames.html'">
+            <div>
+                <div class="game-icon">⭕</div>
+                <h2 class="game-title" data-en="Ultimate Tris" data-zh="终极井字棋">Ultimate Tris</h2>
+                <p class="game-description" data-en="The classic Tic-Tac-Toe game reimagined with cosmic flair and advanced features. Play against AI with three difficulty levels (Easy, Medium, Hard) or challenge a friend in Player vs Player mode. Features detailed statistics tracking, win streaks, game history, and beautiful animations. Perfect for quick strategic fun." data-zh="经典的井字棋游戏重新设计，具有宇宙风格和高级功能。与具有三个难度级别（简单、中等、困难）的AI对战，或在玩家对战模式中挑战朋友。具有详细的统计跟踪、连胜记录、游戏历史和美丽的动画。非常适合快速的策略乐趣。">The classic Tic-Tac-Toe game reimagined with cosmic flair and advanced features. Play against AI with three difficulty levels (Easy, Medium, Hard) or challenge a friend in Player vs Player mode. Features detailed statistics tracking, win streaks, game history, and beautiful animations. Perfect for quick strategic fun.</p>
+            </div>
+            <a href="TrisGames.html" class="play-button" data-en="Play Tris" data-zh="开始井字棋">Play Tris</a>
+        </div>
+
+        <div class="game-card" onclick="window.location.href='UnoGames.html'">
+            <div>
+                <div class="game-icon">🃏</div>
+                <h2 class="game-title" data-en="Cosmic Clash" data-zh="宇宙冲突">Cosmic Clash</h2>
+                <p class="game-description" data-en="A thrilling card game inspired by UNO with cosmic themes and enhanced gameplay. Match colors and numbers, use powerful special cards like Skip, Reverse, Draw Two, and Wild cards. Features intelligent AI opponents with multiple difficulty levels, smooth animations, and strategic depth. Race to empty your hand first!" data-zh="一款以UNO为灵感的激动人心的纸牌游戏，具有宇宙主题和增强的游戏玩法。匹配颜色和数字，使用强大的特殊卡牌，如跳过、反转、抽两张和万能卡。具有多个难度级别的智能AI对手、流畅的动画和战略深度。争取第一个清空手牌！">A thrilling card game inspired by UNO with cosmic themes and enhanced gameplay. Match colors and numbers, use powerful special cards like Skip, Reverse, Draw Two, and Wild cards. Features intelligent AI opponents with multiple difficulty levels, smooth animations, and strategic depth. Race to empty your hand first!</p>
+            </div>
+            <a href="UnoGames.html" class="play-button" data-en="Play Cosmic Clash" data-zh="开始宇宙冲突">Play Cosmic Clash</a>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>© 2024 Albix Classic Games - Cosmic Collection</p>
+        <p>Enjoy hours of entertainment with these timeless games!</p>
+    </div>
+
+    <!-- AI Credit -->
+    <div style="position: fixed; bottom: 10px; right: 15px; font-size: 11px; color: rgba(255,255,255,0.4); font-family: 'Segoe UI', sans-serif; z-index: 1000; pointer-events: none;">
+        AI-Generated Script by Albix4563
+    </div>
+
+    <script>
+        let currentLanguage = 'en';
+
+        // Language switching functionality
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            
+            // Update active language button
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[onclick="setLanguage('${lang}')"]`).classList.add('active');
+            
+            // Update all elements with data attributes
+            document.querySelectorAll('[data-en]').forEach(element => {
+                const text = element.getAttribute(`data-${lang}`);
+                if (text) {
+                    element.textContent = text;
+                }
+            });
+        }
+
+        // Theme toggle functionality
+        function toggleTheme() {
+            const body = document.body;
+            const themeBtn = document.getElementById('themeBtn');
+            
+            if (body.classList.contains('light-theme')) {
+                body.classList.remove('light-theme');
+                updateElementText(themeBtn, '🌙 Dark Mode', '🌙 深色模式');
+                localStorage.setItem('homeTheme', 'dark');
+            } else {
+                body.classList.add('light-theme');
+                updateElementText(themeBtn, '☀️ Light Mode', '☀️ 浅色模式');
+                localStorage.setItem('homeTheme', 'light');
+            }
+        }
+
+        function updateElementText(element, enText, zhText) {
+            if (currentLanguage === 'zh') {
+                element.textContent = zhText;
+            } else {
+                element.textContent = enText;
+            }
+        }
+
+        // Create background particles
+        function createBackgroundParticles() {
+            const particleCount = window.innerWidth < 768 ? 8 : 15;
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.width = Math.random() * 10 + 5 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                document.body.appendChild(particle);
+            }
+        }
+
+        // Load saved theme
+        function loadSavedTheme() {
+            const savedTheme = localStorage.getItem('homeTheme') || 'dark';
+            const themeBtn = document.getElementById('themeBtn');
+            
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+                updateElementText(themeBtn, '☀️ Light Mode', '☀️ 浅色模式');
+            } else {
+                updateElementText(themeBtn, '🌙 Dark Mode', '🌙 深色模式');
+            }
+        }
+
+        // Initialize page
+        function init() {
+            createBackgroundParticles();
+            loadSavedTheme();
+        }
+
+        // Start initialization when page loads
+        window.addEventListener('load', init);
+
+        // Add click sound effect (optional)
+        document.querySelectorAll('.game-card, .play-button').forEach(element => {
+            element.addEventListener('click', function(e) {
+                // Add a subtle click effect
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>
