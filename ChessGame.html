@@ -571,9 +571,9 @@
 </head>
 <body>
     <div class="language-selector">
-        <button class="lang-btn active" onclick="setLanguage('en')">EN</button>
-        <button class="lang-btn" onclick="setLanguage('it')">IT</button>
-    </div>
+            <button class="lang-btn active" onclick="setLanguage('en')">🇬🇧 EN</button>
+            <button class="lang-btn" onclick="setLanguage('zh')">🇨🇳 中文</button>
+        </div>
 
     <div class="main-container">
         <div class="game-container">
@@ -604,31 +604,31 @@
 
             <div class="controls">
                 <div class="control-group">
-                    <button class="mode-btn active" id="pvpMode" onclick="setGameMode('pvp')" data-en="Player vs Player" data-it="Giocatore vs Giocatore">Player vs Player</button>
-                    <button class="mode-btn" id="aiMode" onclick="setGameMode('ai')" data-en="vs Computer" data-it="vs Computer">vs Computer</button>
+                    <button class="mode-btn active" id="pvpMode" onclick="setGameMode('pvp')" data-en="Player vs Player" data-zh="玩家对战">Player vs Player</button>
+            <button class="mode-btn" id="aiMode" onclick="setGameMode('ai')" data-en="vs Computer" data-zh="对战电脑">vs Computer</button>
                 </div>
                 
                 <div class="control-group" id="difficultyControls" style="display: none;">
-                    <button class="diff-btn" id="easyDiff" onclick="setDifficulty('easy')" data-en="Easy" data-it="Facile">Easy</button>
-                    <button class="diff-btn active" id="mediumDiff" onclick="setDifficulty('medium')" data-en="Medium" data-it="Medio">Medium</button>
-                    <button class="diff-btn" id="hardDiff" onclick="setDifficulty('hard')" data-en="Hard" data-it="Difficile">Hard</button>
+                    <button class="diff-btn" id="easyDiff" onclick="setDifficulty('easy')" data-en="Easy" data-zh="简单">Easy</button>
+            <button class="diff-btn active" id="mediumDiff" onclick="setDifficulty('medium')" data-en="Medium" data-zh="中等">Medium</button>
+            <button class="diff-btn" id="hardDiff" onclick="setDifficulty('hard')" data-en="Hard" data-zh="困难">Hard</button>
                 </div>
                 
                 <div class="control-group">
-                    <button onclick="newGame()" id="newGameBtn" data-en="New Game" data-it="Nuova Partita">New Game</button>
-                    <button onclick="resetScore()" id="resetScoreBtn" data-en="Reset Score" data-it="Azzera Punteggio">Reset Score</button>
-                    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" data-en="🌙 Dark" data-it="🌙 Scuro">🌙 Dark</button>
+                    <button onclick="newGame()" id="newGameBtn" data-en="New Game" data-zh="新游戏">New Game</button>
+            <button onclick="resetScore()" id="resetScoreBtn" data-en="Reset Score" data-zh="重置分数">Reset Score</button>
+            <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" data-en="🌙 Dark" data-zh="🌙 深色">🌙 Dark</button>
                 </div>
             </div>
 
             <div class="captured-pieces">
-                <h4 id="capturedLabel" data-en="Captured Pieces" data-it="Pezzi Catturati">Captured Pieces</h4>
+                <h4 id="capturedLabel" data-en="Captured Pieces" data-zh="被吃棋子">Captured Pieces</h4>
                 <div class="captured-list" id="capturedWhite"></div>
                 <div class="captured-list" id="capturedBlack"></div>
             </div>
 
             <div class="move-history">
-                <h4 id="historyLabel" data-en="Move History" data-it="Cronologia Mosse">Move History</h4>
+                <h4 id="historyLabel" data-en="Move History" data-zh="走棋历史">Move History</h4>
                 <div class="move-list" id="moveList"></div>
             </div>
         </div>
@@ -689,31 +689,31 @@
                 darkTheme: '🌙 Dark',
                 lightTheme: '☀️ Light'
             },
-            it: {
-                title: 'Scacchi Reali',
-                whiteToMove: 'Tocca al bianco',
-                blackToMove: 'Tocca al nero',
-                whiteWins: 'Il bianco vince!',
-                blackWins: 'Il nero vince!',
-                draw: 'Patta!',
-                check: 'Scacco!',
-                checkmate: 'Scacco matto!',
-                stalemate: 'Stallo!',
-                aiThinking: 'L\'IA sta pensando...',
-                white: 'Bianco',
-                black: 'Nero',
-                draws: 'Patte',
-                capturedPieces: 'Pezzi Catturati',
-                moveHistory: 'Cronologia Mosse',
-                newGame: 'Nuova Partita',
-                resetScore: 'Azzera Punteggio',
-                playerVsPlayer: 'Giocatore vs Giocatore',
-                vsComputer: 'vs Computer',
-                easy: 'Facile',
-                medium: 'Medio',
-                hard: 'Difficile',
-                darkTheme: '🌙 Scuro',
-                lightTheme: '☀️ Chiaro'
+            zh: {
+                title: '皇家国际象棋',
+                whiteToMove: '白方走棋',
+                blackToMove: '黑方走棋',
+                whiteWins: '白方获胜！',
+                blackWins: '黑方获胜！',
+                draw: '平局！',
+                check: '将军！',
+                checkmate: '将死！',
+                stalemate: '僵局！',
+                aiThinking: 'AI正在思考...',
+                white: '白方',
+                black: '黑方',
+                draws: '平局',
+                capturedPieces: '被吃棋子',
+                moveHistory: '走棋历史',
+                newGame: '新游戏',
+                resetScore: '重置分数',
+                playerVsPlayer: '玩家对战',
+                vsComputer: '对战电脑',
+                easy: '简单',
+                medium: '中等',
+                hard: '困难',
+                darkTheme: '🌙 深色',
+                lightTheme: '☀️ 浅色'
             }
         };
 
@@ -1474,7 +1474,7 @@
             
             // Update button texts
             document.querySelectorAll('[data-en]').forEach(element => {
-                const key = currentLanguage === 'en' ? 'data-en' : 'data-it';
+                const key = currentLanguage === 'en' ? 'data-en' : 'data-zh';
                 element.textContent = element.getAttribute(key);
             });
             
@@ -1499,7 +1499,7 @@
             document.querySelectorAll('.lang-btn').forEach(btn => {
                 btn.classList.remove('active');
                 if ((savedLanguage === 'en' && btn.textContent.includes('EN')) ||
-                    (savedLanguage === 'it' && btn.textContent.includes('IT'))) {
+                    (savedLanguage === 'zh' && btn.textContent.includes('中文'))) {
                     btn.classList.add('active');
                 }
             });
