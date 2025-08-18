@@ -516,24 +516,71 @@
 
         @media (max-width: 768px) {
             :root {
-                --board-size: min(85vw, 85vh, 400px);
+                --board-size: min(85vw, 85vh, 380px);
+                --base-font: clamp(16px, 4vw, 20px);
+            }
+
+            h1 {
+                font-size: 2.8em;
+                margin-bottom: 15px;
+            }
+
+            .main-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+                padding: 10px;
+            }
+
+            .game-container, .side-panel {
+                width: 100%;
+                max-width: 100%;
+                padding: 25px;
+            }
+
+            .score-board {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .control-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            button {
+                padding: 18px;
+                font-size: 1.2em;
+                width: 100%;
+            }
+
+            .captured-pieces, .move-history {
+                padding: 15px;
+            }
+
+            /* Touch feedback */
+            button:active {
+                transform: scale(0.95);
+                opacity: 0.9;
+            }
+        }
+
+        @media (max-width: 480px) {
+            :root {
+                --board-size: min(90vw, 320px);
             }
             
-            .main-container {
-                padding: 10px;
-                gap: 20px;
+            h1 {
+                font-size: 2.2em;
             }
             
             .game-container, .side-panel {
                 padding: 20px;
             }
             
-            h1 {
-                font-size: 2.5em;
-            }
-            
-            .control-group {
-                justify-content: center;
+            .status {
+                font-size: 1.3em;
+                margin: 15px 0;
             }
         }
 
