@@ -517,57 +517,110 @@
         /* Responsive */
         @media (max-width: 768px) {
             :root {
-                --card-width: 50px;
+                --card-width: 70px;
+                --base-font: clamp(16px, 4vw, 20px);
             }
-            h1 { 
-                font-size: 1.2em; 
-                letter-spacing: 1px;
+            
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 10px;
             }
-            .controls { 
-                gap: 5px;
+            
+            .controls {
+                gap: 8px;
             }
+            
             button {
-                padding: 8px 12px;
-                font-size: 0.8em;
-            }
-            select {
-                padding: 8px 12px;
-                font-size: 0.8em;
-            }
-            .game-container { 
-                padding: 10px;
-                border-radius: 15px;
-            }
-            .hand-container {
-                gap: 2px;
-            }
-            #player-hand .card:hover:not(.disabled) {
-                transform: translateY(-10px) scale(1.05);
-            }
-            .status {
+                padding: 12px 20px;
                 font-size: 1em;
-                top: -30px;
             }
+            
+            select {
+                padding: 10px 15px;
+                font-size: 1em;
+            }
+            
+            .game-container {
+                padding: 15px;
+                border-radius: 20px;
+            }
+            
+            .hand-container {
+                gap: 8px;
+            }
+            
+            #player-hand .card {
+                transition: transform 0.2s ease;
+            }
+            
+            #player-hand .card:active:not(.disabled) {
+                transform: translateY(-20px) scale(1.1);
+            }
+            
+            .status {
+                font-size: 1.4em;
+                top: -40px;
+                white-space: normal;
+                padding: 8px 25px;
+                width: 90%;
+                max-width: 400px;
+            }
+            
             .color-btn {
-                width: 50px;
-                height: 50px;
+                width: 60px;
+                height: 60px;
             }
+            
             .difficulty-display {
-                font-size: 0.8em;
-                padding: 4px 10px;
+                font-size: 1em;
+                padding: 8px 15px;
+            }
+            
+            .game-area {
+                gap: 30px;
+            }
+            
+            .game-table {
+                flex-direction: column;
+                gap: 25px;
+                padding: 30px 10px;
+            }
+            
+            /* Touch feedback for buttons */
+            button:active {
+                transform: scale(0.95);
+                opacity: 0.9;
             }
         }
 
         @media (max-width: 480px) {
+            :root {
+                --card-width: 60px;
+            }
+            
             .top-bar {
                 flex-direction: column;
                 align-items: center;
-            }
-            .game-table {
                 gap: 15px;
             }
+            
             .game-settings {
-                justify-content: center;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .hand-area {
+                min-height: calc(var(--card-height) + 30px);
+            }
+            
+            .card-count {
+                font-size: 1.1em;
+            }
+            
+            /* Reduce particle count for performance */
+            .particle {
+                display: none;
             }
         }
     </style>

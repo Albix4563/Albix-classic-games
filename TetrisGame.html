@@ -661,30 +661,125 @@
 
         @media (max-width: 768px) {
             :root {
-                --board-width: min(80vw, 300px);
+                --board-width: min(85vw, 350px);
+                --base-font: clamp(16px, 4vw, 20px);
             }
 
             h1 {
-                font-size: 2.5em;
+                font-size: 2.8em;
+                margin-bottom: 15px;
+            }
+
+            .main-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+
+            .game-container, .side-panel {
+                width: 100%;
+                max-width: 100%;
+                padding: 25px;
             }
 
             .controls {
                 grid-template-columns: 1fr;
+                gap: 12px;
+                margin-top: 20px;
+            }
+
+            button {
+                padding: 20px;
+                font-size: 1.3em;
             }
 
             .difficulty-selector {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+
+            .diff-btn {
+                padding: 15px 10px;
+                font-size: 1em;
             }
 
             .game-area {
                 flex-direction: column;
                 align-items: center;
+                margin: 20px 0;
             }
 
             .next-pieces {
                 width: 100%;
                 flex-direction: row;
                 justify-content: center;
+                gap: 15px;
+                margin-top: 20px;
+            }
+
+            .next-piece {
+                min-height: auto;
+                padding: 12px;
+            }
+
+            .score-section {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+            }
+
+            .score-item {
+                flex: 1;
+                min-width: 120px;
+                padding: 12px;
+            }
+
+            .score-item p {
+                font-size: 1.8em;
+            }
+
+            /* Touch feedback */
+            button:active {
+                transform: scale(0.95);
+                opacity: 0.9;
+            }
+        }
+
+        @media (max-width: 480px) {
+            :root {
+                --board-width: min(90vw, 280px);
+            }
+            
+            h1 {
+                font-size: 2.2em;
+            }
+            
+            .game-container, .side-panel {
+                padding: 20px;
+            }
+            
+            .controls {
+                gap: 10px;
+            }
+            
+            button {
+                padding: 18px;
+                font-size: 1.2em;
+            }
+            
+            .difficulty-selector {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .diff-btn {
+                padding: 12px 8px;
+                font-size: 0.9em;
+            }
+            
+            .score-item {
+                min-width: 100px;
             }
         }
     </style>
