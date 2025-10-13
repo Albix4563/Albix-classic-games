@@ -788,6 +788,8 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="multiplayer.js"></script>
     <script>
         // Translations
         const translations = {
@@ -942,6 +944,12 @@
         let moveStartTime = Date.now();
         let gameStartTime = Date.now();
         let moveCount = 0;
+
+        const multiplayerManager = window.createMultiplayerManager({
+            gameId: 'tris',
+            scoreLabel: 'Vittorie',
+            initialScore: scores.player
+        });
 
         const winningConditions = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8],
@@ -1452,6 +1460,7 @@
             document.getElementById('scorePlayer').textContent = scores.player;
             document.getElementById('scoreOpponent').textContent = scores.opponent;
             document.getElementById('scoreDraw').textContent = scores.draw;
+            multiplayerManager.updateScore(scores.player);
         }
 
         function updateStatsDisplay() {

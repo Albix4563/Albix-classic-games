@@ -687,6 +687,8 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="multiplayer.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const playerHandElement = document.getElementById('player-hand');
@@ -717,6 +719,12 @@
             let currentDifficulty = 'medium';
             let playHistory = []; // Track play history for AI
             let cardMemory = {}; // AI memory for higher difficulties
+            let playerWinCount = 0;
+            const multiplayerManager = window.createMultiplayerManager({
+                gameId: 'uno',
+                scoreLabel: 'Vittorie',
+                initialScore: playerWinCount
+            });
 
             const COLORS = ['red', 'green', 'blue', 'yellow'];
             const VALUES = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'skip', 'reverse', 'draw2'];
@@ -1204,6 +1212,10 @@
                 gameActive = false;
                 playerCanPlay = false;
                 const message = winner === 'player' ? t('youWin') : t('aiWins');
+                if (winner === 'player') {
+                    playerWinCount += 1;
+                    multiplayerManager.updateScore(playerWinCount);
+                }
                 updateStatus(message);
                 render();
             }

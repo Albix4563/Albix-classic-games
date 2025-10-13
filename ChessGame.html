@@ -681,6 +681,8 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="multiplayer.js"></script>
     <script>
         // Game state variables
         let board = [];
@@ -763,6 +765,12 @@
                 lightTheme: '☀️ 浅色'
             }
         };
+
+        const multiplayerManager = window.createMultiplayerManager({
+            gameId: 'chess',
+            scoreLabel: 'Vittorie',
+            initialScore: scores.white
+        });
 
         // Initialize the chess board
         function initBoard() {
@@ -1431,6 +1439,7 @@
             document.getElementById('scoreWhite').textContent = scores.white;
             document.getElementById('scoreBlack').textContent = scores.black;
             document.getElementById('scoreDraw').textContent = scores.draw;
+            multiplayerManager.updateScore(scores.white);
         }
 
         // Game mode functions

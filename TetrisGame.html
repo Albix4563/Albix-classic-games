@@ -868,6 +868,8 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="multiplayer.js"></script>
     <script>
         // Translations
         const translations = {
@@ -978,6 +980,12 @@
         let lines = 0;
         let level = 1;
         let fallSpeed = 1000;
+
+        const multiplayerManager = window.createMultiplayerManager({
+            gameId: 'tetris',
+            scoreLabel: 'Punteggio',
+            initialScore: score
+        });
 
         // Tetris pieces
         const pieces = {
@@ -1169,6 +1177,7 @@
             linesDisplay.textContent = lines;
             levelDisplay.textContent = level;
             speedDisplay.textContent = `${(1000 / fallSpeed).toFixed(1)}x`;
+            multiplayerManager.updateScore(score);
         }
 
         // Render game

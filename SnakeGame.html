@@ -571,6 +571,8 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="multiplayer.js"></script>
     <script>
         // Translations
         const translations = {
@@ -657,6 +659,11 @@
         let score = 0;
         let highScore = 0;
         let speed = 150;
+        const multiplayerManager = window.createMultiplayerManager({
+            gameId: 'snake',
+            scoreLabel: 'Punteggio',
+            initialScore: score
+        });
         
         // DOM elements
         const gameBoard = document.getElementById('gameBoard');
@@ -772,6 +779,7 @@
             scoreDisplay.textContent = score;
             highScoreDisplay.textContent = highScore;
             speedDisplay.textContent = `${(150 / speed).toFixed(1)}x`;
+            multiplayerManager.updateScore(score);
         }
 
         // Start game
