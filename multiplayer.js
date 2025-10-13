@@ -89,6 +89,7 @@ body.light-theme .mp-player.me{background:rgba(102,126,234,0.25);}
             this.nickname = '';
             this.isHost = false;
             this.connecting = false;
+            this.listeners = new Map();
             this.buildUI();
             this.bindEvents();
             this.updateScore(this.score);
@@ -272,6 +273,7 @@ body.light-theme .mp-player.me{background:rgba(102,126,234,0.25);}
                     this.openConnectionToHost();
                 }
                 this.renderPlayers();
+                this.emit('localReady', { id });
             });
 
             this.peer.on('connection', (conn) => {
@@ -335,6 +337,7 @@ body.light-theme .mp-player.me{background:rgba(102,126,234,0.25);}
                 this.players.delete(conn.peer);
                 this.broadcast({ type: 'playerLeft', payload: { id: conn.peer } });
                 this.renderPlayers();
+                this.emit('playerLeft', { id: conn.peer });
             };
 
             conn.on('close', cleanup);
@@ -344,6 +347,8 @@ body.light-theme .mp-player.me{background:rgba(102,126,234,0.25);}
         handleMessage(conn, data) {
             if (!data || typeof data !== 'object') return;
             const { type, payload } = data;
+            const senderId = conn && conn.peer ? conn.peer : null;
+            let handled = true;
 
             switch (type) {
                 case 'join':
@@ -359,6 +364,7 @@ body.light-theme .mp-player.me{background:rgba(102,126,234,0.25);}
                         });
                         this.broadcast({ type: 'playerJoined', payload }, payload.id);
                         this.renderPlayers();
+                        this.emit('playerJoined', payload);
                     }
                     break;
                 case 'sessionState':
@@ -369,18 +375,21 @@ body.light-theme .mp-player.me{background:rgba(102,126,234,0.25);}
                         if (payload.scoreLabel) {
                             this.boardLabel.textContent = payload.scoreLabel;
                         }
+                        this.emit('sessionState', payload);
                     }
                     break;
                 case 'playerJoined':
                     if (payload) {
                         this.addOrUpdatePlayer(payload.id, payload.nickname, payload.score);
                         this.renderPlayers();
+                        this.emit('playerJoined', payload);
                     }
                     break;
                 case 'playerLeft':
                     if (payload && payload.id) {
                         this.players.delete(payload.id);
                         this.renderPlayers();
+                        this.emit('playerLeft', payload);
                     }
                     break;
                 case 'scoreUpdate':
@@ -390,14 +399,21 @@ body.light-theme .mp-player.me{background:rgba(102,126,234,0.25);}
                             this.broadcast({ type: 'scoreUpdate', payload }, payload.id);
                         }
                         this.renderPlayers();
+                        this.emit('scoreUpdate', payload);
                     }
                     break;
                 case 'hostClosing':
                     this.setStatus('L\'host ha chiuso la sessione.');
                     this.disconnect();
+                    this.emit('hostClosing', payload || {});
                     break;
                 default:
+                    handled = false;
                     break;
+            }
+
+            if (!handled) {
+                this.emit('message', { type, payload, senderId });
             }
         }
 
@@ -407,17 +423,27 @@ body.light-theme .mp-player.me{background:rgba(102,126,234,0.25);}
             this.players.set(id, { nickname: safeName, score: safeScore });
         }
 
-        renderPlayers() {
-            this.playerList.innerHTML = '';
-            const entries = Array.from(this.players.entries()).map(([id, info]) => ({ id, ...info }));
+        serializePlayers() {
+            const entries = Array.from(this.players.entries()).map(([id, info]) => ({
+                id,
+                nickname: info.nickname,
+                score: info.score,
+            }));
             if (this.localPlayerId && !entries.some((item) => item.id === this.localPlayerId)) {
                 entries.push({ id: this.localPlayerId, nickname: this.nickname || 'Player', score: this.score || 0 });
             }
+            return entries;
+        }
+
+        renderPlayers() {
+            this.playerList.innerHTML = '';
+            const entries = this.serializePlayers();
             if (entries.length === 0) {
                 const item = document.createElement('li');
                 item.className = 'mp-player';
                 item.textContent = 'Nessun giocatore connesso.';
                 this.playerList.appendChild(item);
+                this.emit('playersChanged', entries);
                 return;
             }
             entries.sort((a, b) => b.score - a.score || a.nickname.localeCompare(b.nickname));
@@ -435,6 +461,66 @@ body.light-theme .mp-player.me{background:rgba(102,126,234,0.25);}
                 item.appendChild(score);
                 this.playerList.appendChild(item);
             });
+            this.emit('playersChanged', entries);
+        }
+
+        on(eventName, handler) {
+            if (typeof handler !== 'function') {
+                return () => {};
+            }
+            if (!this.listeners.has(eventName)) {
+                this.listeners.set(eventName, new Set());
+            }
+            const bucket = this.listeners.get(eventName);
+            bucket.add(handler);
+            return () => {
+                bucket.delete(handler);
+                if (bucket.size === 0) {
+                    this.listeners.delete(eventName);
+                }
+            };
+        }
+
+        emit(eventName, detail) {
+            const bucket = this.listeners.get(eventName);
+            if (!bucket || bucket.size === 0) {
+                return;
+            }
+            bucket.forEach((listener) => {
+                try {
+                    listener(detail);
+                } catch (error) {
+                    console.error('[Multiplayer] listener error', error);
+                }
+            });
+        }
+
+        getLocalPlayerId() {
+            return this.localPlayerId;
+        }
+
+        getPlayers() {
+            return this.serializePlayers();
+        }
+
+        isConnected() {
+            if (this.isHost) {
+                return this.connections.size > 0;
+            }
+            return !!(this.primaryConnection && this.primaryConnection.open);
+        }
+
+        sendMessage(type, payload = {}, options = {}) {
+            const message = { type, payload };
+            if (this.isHost) {
+                if (options.target && this.connections.has(options.target)) {
+                    this.send(this.connections.get(options.target), message);
+                } else {
+                    this.broadcast(message, options.excludeId);
+                }
+            } else if (this.primaryConnection) {
+                this.send(this.primaryConnection, message);
+            }
         }
 
         broadcast(message, excludeId = null) {
@@ -531,6 +617,7 @@ body.light-theme .mp-player.me{background:rgba(102,126,234,0.25);}
             } else {
                 this.connectionLabel.textContent = 'Offline';
             }
+            this.emit('connectionState', state);
         }
 
         readUrl() {

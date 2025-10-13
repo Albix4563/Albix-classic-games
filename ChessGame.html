@@ -772,6 +772,49 @@
             initialScore: scores.white
         });
 
+        function warnMultiplayerUnsupported() {
+            if (!multiplayerManager || typeof multiplayerManager.on !== 'function') {
+                return;
+            }
+            const notice = document.createElement('div');
+            notice.textContent = 'Modalità multiplayer in tempo reale non ancora disponibile per questo gioco: la sessione condivide solo la classifica.';
+            notice.style.position = 'fixed';
+            notice.style.bottom = '20px';
+            notice.style.left = '20px';
+            notice.style.maxWidth = '280px';
+            notice.style.padding = '10px 14px';
+            notice.style.fontSize = '12px';
+            notice.style.lineHeight = '1.4';
+            notice.style.background = 'rgba(0,0,0,0.7)';
+            notice.style.color = '#fff';
+            notice.style.borderRadius = '10px';
+            notice.style.boxShadow = '0 10px 18px rgba(0,0,0,0.35)';
+            notice.style.zIndex = '1800';
+            notice.style.pointerEvents = 'none';
+            notice.style.display = 'none';
+            document.body.appendChild(notice);
+
+            const getLocalId = () => {
+                if (typeof multiplayerManager.getLocalPlayerId === 'function') {
+                    return multiplayerManager.getLocalPlayerId();
+                }
+                return multiplayerManager.localPlayerId || null;
+            };
+
+            const update = (players) => {
+                const list = Array.isArray(players) ? players : [];
+                const localId = getLocalId();
+                const others = list.filter((player) => player.id && player.id !== localId);
+                notice.style.display = others.length > 0 ? 'block' : 'none';
+            };
+
+            multiplayerManager.on('playersChanged', update);
+            const initial = typeof multiplayerManager.getPlayers === 'function' ? multiplayerManager.getPlayers() : [];
+            update(initial);
+        }
+
+        warnMultiplayerUnsupported();
+
         // Initialize the chess board
         function initBoard() {
             // Initialize empty 8x8 board

@@ -726,6 +726,27 @@
                 initialScore: playerWinCount
             });
 
+            const mpState = {
+                enabled: false,
+                remotePlayerId: null,
+                remoteNickname: '',
+                awaitingRemoteAction: false,
+                lastSyncedState: null,
+                cleanupHandlers: []
+            };
+
+            function isMultiplayerActive() {
+                return mpState.enabled;
+            }
+
+            function isMultiplayerHost() {
+                return isMultiplayerActive() && !!multiplayerManager.isHost;
+            }
+
+            function isMultiplayerGuest() {
+                return isMultiplayerActive() && !isMultiplayerHost();
+            }
+
             const COLORS = ['red', 'green', 'blue', 'yellow'];
             const VALUES = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'skip', 'reverse', 'draw2'];
             const WILD_VALUES = ['wild', 'wild4'];
@@ -760,6 +781,25 @@
                     deckReshuffled: 'Deck reshuffled!',
                     colorChanged: 'Color changed to {color}!',
                     aiChose: 'AI chose {color}!',
+                    opponentTurn: "Opponent's Turn...",
+                    opponentDraws: 'Opponent draws',
+                    opponentCards: 'Opponent: {count} Card{s}',
+                    opponentPlays: 'Opponent plays',
+                    opponentDrawing: 'Opponent is drawing...',
+                    opponentPlaysDrawn: 'Opponent plays drawn card...',
+                    opponentWins: 'Opponent wins!',
+                    opponentChose: 'Opponent chose {color}!',
+                    waitingForOpponent: 'Waiting for opponent...',
+                    waitingForHost: 'Waiting for host...',
+                    opponentLeft: 'Opponent left the match.',
+                    opponentJoined: 'Opponent joined the match!',
+                    multiplayerReady: 'Multiplayer ready.',
+                    syncingState: 'Syncing match state...',
+                    requestSent: 'Request sent to host...',
+                    notYourTurn: 'Not your turn.',
+                    invalidMove: 'Cannot play that card.',
+                    chooseColorFirst: 'Select a color before playing that card.',
+                    resyncing: 'Synchronizing with host...',
                     cardBack: 'COSMIC\nCLASH',
                     // Difficulty levels
                     novice: 'Novice',
@@ -829,6 +869,14 @@
                 return text;
             }
 
+            function opponentKey(suffix) {
+                return isMultiplayerActive() ? `opponent${suffix}` : `ai${suffix}`;
+            }
+
+            function opponentText(suffix, params = {}) {
+                return t(opponentKey(suffix), params);
+            }
+
             function updateUILanguage() {
                 gameTitle.textContent = t('gameTitle');
                 newGameBtn.textContent = t('newGame');
@@ -850,14 +898,312 @@
                     cardBack.innerHTML = t('cardBack').replace('\n', '<br>');
                 });
                 
-                // Update AI card count
-                updateAICardCount();
+                updateMultiplayerUIState();
             }
 
             function updateAICardCount() {
                 const count = aiHand.length;
-                const text = t('aiCards', { count: count, s: count !== 1 ? 's' : '' });
+                const text = t(opponentKey('Cards'), { count: count, s: count !== 1 ? 's' : '' });
                 aiCardCountElement.textContent = text.replace('{s}', '');
+            }
+
+            function getLocalPlayerId() {
+                if (typeof multiplayerManager.getLocalPlayerId === 'function') {
+                    return multiplayerManager.getLocalPlayerId();
+                }
+                return multiplayerManager.localPlayerId || null;
+            }
+
+            function registerMultiplayerHandler(eventName, handler) {
+                if (!multiplayerManager || typeof multiplayerManager.on !== 'function') {
+                    return;
+                }
+                const dispose = multiplayerManager.on(eventName, handler);
+                if (typeof dispose === 'function') {
+                    mpState.cleanupHandlers.push(dispose);
+                }
+            }
+
+            function updateMultiplayerUIState() {
+                const multiplayer = isMultiplayerActive();
+                if (multiplayer) {
+                    difficultySelect.setAttribute('disabled', 'disabled');
+                } else {
+                    difficultySelect.removeAttribute('disabled');
+                }
+                difficultySelect.classList.toggle('disabled', multiplayer);
+                difficultyDisplay.textContent = multiplayer ? t('multiplayerReady') : t(currentDifficulty);
+                updateAICardCount();
+            }
+
+            function handleMultiplayerOpponentJoined() {
+                updateStatus(t('opponentJoined'));
+            }
+
+            function handleMultiplayerOpponentLeft() {
+                mpState.awaitingRemoteAction = false;
+                if (gameActive) {
+                    updateStatus(t('opponentLeft'));
+                }
+                if (isMultiplayerHost()) {
+                    gameActive = false;
+                    playerCanPlay = false;
+                    render();
+                }
+            }
+
+            function handleMultiplayerPlayersChanged(players) {
+                const entries = Array.isArray(players) ? players : [];
+                const localId = getLocalPlayerId();
+                const remote = entries.find((p) => p.id && p.id !== localId) || null;
+                const wasEnabled = mpState.enabled;
+
+                mpState.enabled = !!remote;
+                mpState.remotePlayerId = remote ? remote.id : null;
+                mpState.remoteNickname = remote ? remote.nickname : '';
+                updateMultiplayerUIState();
+
+                if (!mpState.enabled) {
+                    if (wasEnabled) {
+                        handleMultiplayerOpponentLeft();
+                    }
+                    return;
+                }
+
+                if (!wasEnabled) {
+                    handleMultiplayerOpponentJoined();
+                }
+
+                if (isMultiplayerHost()) {
+                    if (gameActive) {
+                        syncMultiplayerState({ reason: 'sync' });
+                    } else {
+                        sendLobbyState();
+                    }
+                }
+            }
+
+            function handleConnectionStateChange(state) {
+                if (state === 'offline') {
+                    mpState.enabled = false;
+                    mpState.remotePlayerId = null;
+                    mpState.awaitingRemoteAction = false;
+                    if (gameActive) {
+                        updateStatus(t('opponentLeft'));
+                    }
+                }
+                updateMultiplayerUIState();
+            }
+
+            function sendUnoError(key, params = {}) {
+                if (!isMultiplayerHost() || !isMultiplayerActive()) return;
+                multiplayerManager.sendMessage('uno:error', { key, params }, { target: mpState.remotePlayerId });
+            }
+
+            function buildMultiplayerState() {
+                return {
+                    gameActive,
+                    currentColor,
+                    discardPile: discardPile.map((card) => ({ color: card.color, value: card.value })),
+                    currentPlayer,
+                    waitingForColorPick,
+                    deckCount: deck.length,
+                    yourHand: aiHand.map((card) => ({ color: card.color, value: card.value })),
+                    opponentCardCount: playerHand.length,
+                    canAct: gameActive && currentPlayer === 'ai' && !waitingForColorPick
+                };
+            }
+
+            function syncMultiplayerState(extra = {}) {
+                if (!isMultiplayerHost() || !isMultiplayerActive()) return;
+                const payload = Object.assign(buildMultiplayerState(), extra || {});
+                mpState.lastSyncedState = payload;
+                multiplayerManager.sendMessage('uno:state', payload, { target: mpState.remotePlayerId });
+            }
+
+            function sendLobbyState() {
+                if (!isMultiplayerHost() || !isMultiplayerActive()) return;
+                const payload = {
+                    gameActive,
+                    currentColor,
+                    discardPile: discardPile.map((card) => ({ color: card.color, value: card.value })),
+                    currentPlayer,
+                    waitingForColorPick,
+                    deckCount: deck.length,
+                    yourHand: aiHand.map((card) => ({ color: card.color, value: card.value })),
+                    opponentCardCount: playerHand.length,
+                    canAct: false,
+                    status: { key: gameActive ? 'syncingState' : 'waitingForHost' }
+                };
+                mpState.lastSyncedState = payload;
+                multiplayerManager.sendMessage('uno:state', payload, { target: mpState.remotePlayerId });
+            }
+
+            function applyIncomingMultiplayerState(state) {
+                const safeState = state || {};
+                mpState.lastSyncedState = safeState;
+
+                gameActive = !!safeState.gameActive;
+                currentColor = safeState.currentColor || null;
+                discardPile = Array.isArray(safeState.discardPile)
+                    ? safeState.discardPile.map((card) => ({ color: card.color, value: card.value }))
+                    : [];
+                deck = new Array(typeof safeState.deckCount === 'number' ? safeState.deckCount : 0).fill(null);
+
+                const remoteHand = Array.isArray(safeState.yourHand) ? safeState.yourHand : [];
+                playerHand = remoteHand.map((card) => ({ color: card.color, value: card.value }));
+                const opponentCount = typeof safeState.opponentCardCount === 'number' ? safeState.opponentCardCount : 0;
+                aiHand = Array.from({ length: opponentCount }, () => ({}));
+
+                const hostCurrentPlayer = safeState.currentPlayer || 'player';
+                currentPlayer = hostCurrentPlayer === 'player' ? 'ai' : 'player';
+
+                waitingForColorPick = false;
+                playerCanPlay = !!safeState.canAct && currentPlayer === 'player';
+                mpState.awaitingRemoteAction = false;
+
+                render();
+                updateAICardCount();
+
+                if (!gameActive && safeState.winner) {
+                    handleRemoteGameEnd(safeState.winner);
+                    return;
+                }
+
+                if (safeState.status && safeState.status.key) {
+                    updateStatus(t(safeState.status.key, safeState.status.params || {}));
+                } else if (gameActive) {
+                    if (currentPlayer === 'player') {
+                        updateStatus(t('clickToPlay'));
+                    } else {
+                        updateStatus(t('waitingForHost'));
+                    }
+                } else {
+                    updateStatus(t('waitingForHost'));
+                }
+            }
+
+            function handleRemoteGameEnd(winner) {
+                gameActive = false;
+                playerCanPlay = false;
+                waitingForColorPick = false;
+                if (winner === 'ai') {
+                    playerWinCount += 1;
+                    multiplayerManager.updateScore(playerWinCount);
+                    updateStatus(t('youWin'));
+                } else {
+                    updateStatus(opponentText('Wins'));
+                }
+                render();
+            }
+
+            function handleRemoteDraw() {
+                if (!isMultiplayerHost() || !isMultiplayerActive()) return;
+                if (!gameActive || currentPlayer !== 'ai' || waitingForColorPick) {
+                    sendUnoError('notYourTurn');
+                    syncMultiplayerState({ reason: 'reject' });
+                    return;
+                }
+                const drawnCards = drawCards('ai', 1);
+                const drawnCard = drawnCards[0] || null;
+
+                if (drawnCard && isPlayable(drawnCard)) {
+                    updateStatus(t('canPlayDrawn'));
+                    syncMultiplayerState({ reason: 'drawPlayable', status: { key: 'canPlayDrawn' } });
+                } else {
+                    updateStatus(t('cannotPlayDrawn'));
+                    switchTurn({ statusKey: 'cannotPlayDrawn' });
+                }
+            }
+
+            function handleRemotePlay(payload = {}) {
+                if (!isMultiplayerHost() || !isMultiplayerActive()) return;
+                if (!gameActive || currentPlayer !== 'ai' || waitingForColorPick) {
+                    sendUnoError('notYourTurn');
+                    syncMultiplayerState({ reason: 'reject' });
+                    return;
+                }
+                const card = payload.card || {};
+                const chosenColor = payload.chosenColor;
+                if (!card || !card.color || !card.value) {
+                    sendUnoError('invalidMove');
+                    syncMultiplayerState({ reason: 'resync', status: { key: 'resyncing' } });
+                    return;
+                }
+                const matchIndex = aiHand.findIndex((c) => c.color === card.color && c.value === card.value);
+                if (matchIndex === -1) {
+                    sendUnoError('invalidMove');
+                    syncMultiplayerState({ reason: 'resync', status: { key: 'resyncing' } });
+                    return;
+                }
+                const candidate = aiHand[matchIndex];
+                if (!isPlayable(candidate)) {
+                    sendUnoError('invalidMove');
+                    syncMultiplayerState({ reason: 'resync' });
+                    return;
+                }
+                const options = {};
+                if (candidate.color === 'wild') {
+                    if (!chosenColor || !COLORS.includes(chosenColor)) {
+                        sendUnoError('chooseColorFirst');
+                        return;
+                    }
+                    options.chosenColor = chosenColor;
+                }
+                playCard(candidate, 'ai', matchIndex, options);
+                syncMultiplayerState({ reason: 'play' });
+            }
+
+            function handleMultiplayerMessage(event) {
+                if (!event || !event.type) return;
+                if (isMultiplayerHost()) {
+                    if (event.senderId && mpState.remotePlayerId && event.senderId !== mpState.remotePlayerId) {
+                        return;
+                    }
+                    switch (event.type) {
+                        case 'uno:requestStart':
+                            startGame({ multiplayer: true });
+                            break;
+                        case 'uno:drawCard':
+                            handleRemoteDraw();
+                            break;
+                        case 'uno:playCard':
+                            handleRemotePlay(event.payload || {});
+                            break;
+                        default:
+                            break;
+                    }
+                } else if (isMultiplayerGuest()) {
+                    switch (event.type) {
+                        case 'uno:state':
+                            applyIncomingMultiplayerState(event.payload || {});
+                            break;
+                        case 'uno:error':
+                            if (event.payload && event.payload.key) {
+                                updateStatus(t(event.payload.key, event.payload.params || {}));
+                            }
+                            break;
+                        case 'hostClosing':
+                            mpState.enabled = false;
+                            updateStatus(t('opponentLeft'));
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
+            function setupMultiplayerIntegration() {
+                if (!multiplayerManager || typeof multiplayerManager.on !== 'function') {
+                    return;
+                }
+                registerMultiplayerHandler('playersChanged', handleMultiplayerPlayersChanged);
+                registerMultiplayerHandler('connectionState', handleConnectionStateChange);
+                registerMultiplayerHandler('message', handleMultiplayerMessage);
+                registerMultiplayerHandler('playerLeft', handleMultiplayerOpponentLeft);
+                registerMultiplayerHandler('hostClosing', handleMultiplayerOpponentLeft);
+                registerMultiplayerHandler('localReady', updateMultiplayerUIState);
+                updateMultiplayerUIState();
             }
 
             function createDeck() {
@@ -901,10 +1247,20 @@
                 return deck.length > 0 ? deck.pop() : null;
             }
 
-            function startGame() {
+            function startGame(options = {}) {
+                if (isMultiplayerGuest() && isMultiplayerActive()) {
+                    multiplayerManager.sendMessage('uno:requestStart', {}, { target: mpState.remotePlayerId });
+                    playerCanPlay = false;
+                    waitingForColorPick = false;
+                    updateStatus(t('requestSent'));
+                    return;
+                }
+
+                const multiplayerMatch = options.multiplayer === true || (isMultiplayerHost() && isMultiplayerActive());
+
                 gameActive = true;
-                currentPlayer = 'player';
-                playerCanPlay = true;
+                currentPlayer = options.startingPlayer || 'player';
+                playerCanPlay = currentPlayer === 'player';
                 waitingForColorPick = false;
                 playHistory = [];
                 cardMemory = {};
@@ -929,7 +1285,22 @@
                 }
                 
                 render();
-                updateStatus(t('clickToPlay'));
+
+                const localStatusKey = currentPlayer === 'player' ? 'clickToPlay' : 'waitingForOpponent';
+                updateStatus(t(localStatusKey));
+
+            if (multiplayerMatch && isMultiplayerHost()) {
+                    const remoteStatusKey = currentPlayer === 'player' ? 'waitingForHost' : 'clickToPlay';
+                    mpState.awaitingRemoteAction = currentPlayer === 'ai';
+                    syncMultiplayerState({ reason: 'start', status: { key: remoteStatusKey } });
+                } else if (!multiplayerMatch && currentPlayer === 'ai') {
+                    setTimeout(() => aiTurn(), 1500);
+                }
+            }
+
+            function handleNewGameClick() {
+                const shouldMultiplayer = isMultiplayerHost() && isMultiplayerActive();
+                startGame({ multiplayer: shouldMultiplayer });
             }
             
             function getCardDisplay(card) {
@@ -1015,16 +1386,40 @@
                 }
 
                 const card = playerHand[index];
-                if (isPlayable(card)) {
-                    playCard(card, 'player', index);
-                } else {
+                if (!isPlayable(card)) {
                     updateStatus(t('cannotPlay'));
                     setTimeout(() => {
                         if (currentPlayer === 'player') {
                             updateStatus(t('chooseValid'));
                         }
                     }, 1500);
+                    return;
                 }
+
+                if (isMultiplayerGuest() && isMultiplayerActive()) {
+                    const submitPlay = (selectedColor = null) => {
+                        multiplayerManager.sendMessage('uno:playCard', {
+                            card: { color: card.color, value: card.value },
+                            chosenColor: selectedColor
+                        }, { target: mpState.remotePlayerId });
+                        playerCanPlay = false;
+                        waitingForColorPick = false;
+                        updateStatus(t('waitingForHost'));
+                        render();
+                    };
+
+                    if (card.color === 'wild') {
+                        waitingForColorPick = true;
+                        showColorPicker(card, (chosenColor) => {
+                            submitPlay(chosenColor);
+                        });
+                    } else {
+                        submitPlay(null);
+                    }
+                    return;
+                }
+
+                playCard(card, 'player', index);
             }
 
             function isPlayable(card) {
@@ -1038,7 +1433,7 @@
                 return card.color === currentColor || card.value === topCard.value;
             }
 
-            function playCard(card, player, index) {
+            function playCard(card, player, index, options = {}) {
                 const hand = player === 'player' ? playerHand : aiHand;
                 hand.splice(index, 1);
                 discardPile.push(card);
@@ -1065,20 +1460,24 @@
                         playerCanPlay = false;
                         showColorPicker(card);
                     } else {
-                        const chosenColor = aiChooseColor();
+                        const chosenColor = options.chosenColor || aiChooseColor();
                         currentColor = chosenColor;
-                        updateStatus(t('aiChose', { color: t(chosenColor) }));
-                        handleSpecialCard(card);
+                        updateStatus(opponentText('Chose', { color: t(chosenColor) }));
+                        handleSpecialCard(card, options);
                     }
                 } else {
                     currentColor = card.color;
-                    handleSpecialCard(card);
+                    handleSpecialCard(card, options);
                 }
                 
                 render();
+
+                if (isMultiplayerHost() && isMultiplayerActive() && !waitingForColorPick) {
+                    syncMultiplayerState({ reason: 'play' });
+                }
             }
 
-            function handleSpecialCard(card) {
+            function handleSpecialCard(card, options = {}) {
                 if (!gameActive) return;
                 
                 let skipNextPlayer = false;
@@ -1101,41 +1500,84 @@
 
                 // Switch turns
                 if (!skipNextPlayer) {
-                    switchTurn();
+                    switchTurn(options);
                 } else {
                     // Stay with current player
                     if (currentPlayer === 'ai') {
-                        setTimeout(() => aiTurn(), 2000);
+                        if (isMultiplayerActive()) {
+                            beginOpponentTurn();
+                        } else {
+                            setTimeout(() => aiTurn(), 2000);
+                        }
                     } else {
                         updateStatus(t('yourTurnAgain'));
+                        if (isMultiplayerHost() && isMultiplayerActive()) {
+                            syncMultiplayerState({ reason: 'turn', status: { key: 'waitingForHost' } });
+                        }
                     }
                 }
             }
+
+            function beginOpponentTurn(statusKey = null, statusParams = null) {
+                if (!gameActive) return;
+                playerCanPlay = false;
+                if (isMultiplayerActive()) {
+                    mpState.awaitingRemoteAction = true;
+                    if (!statusKey) {
+                        updateStatus(t('waitingForOpponent'));
+                    }
+                    const remoteStatus = statusKey || 'clickToPlay';
+                    const payload = { reason: 'turn', status: { key: remoteStatus, params: statusParams || {} } };
+                    syncMultiplayerState(payload);
+                } else {
+                    updateStatus(opponentText('Turn'));
+                    setTimeout(() => aiTurn(), 1500);
+                }
+            }
+
+            function beginLocalTurn(statusKey = null, statusParams = null) {
+                if (!gameActive) return;
+                mpState.awaitingRemoteAction = false;
+                playerCanPlay = !waitingForColorPick || statusKey === 'canPlayDrawn';
+                if (statusKey) {
+                    updateStatus(t(statusKey, statusParams || {}));
+                } else {
+                    updateStatus(t('yourTurn'));
+                }
+                if (isMultiplayerHost() && isMultiplayerActive()) {
+                    const payload = { reason: 'turn', status: { key: 'waitingForHost' } };
+                    syncMultiplayerState(payload);
+                }
+            }
             
-            function switchTurn() {
+            function switchTurn(options = {}) {
                 if (!gameActive) return;
                 
                 currentPlayer = currentPlayer === 'player' ? 'ai' : 'player';
                 
                 if (currentPlayer === 'ai') {
-                    playerCanPlay = false;
-                    updateStatus(t('aiTurn'));
-                    setTimeout(() => aiTurn(), 1500);
+                    beginOpponentTurn(options.statusKey || null, options.statusParams || null);
                 } else {
-                    playerCanPlay = true;
-                    updateStatus(t('yourTurn'));
+                    beginLocalTurn(options.statusKey || null, options.statusParams || null);
                 }
                 render();
             }
             
-            function showColorPicker(card) {
+            function showColorPicker(card, onSelected = null) {
                 colorPickerModal.style.display = 'flex';
                 const colorBtns = colorPickerModal.querySelectorAll('.color-btn');
                 
                 colorBtns.forEach(btn => {
                     btn.onclick = () => {
-                        currentColor = btn.dataset.color;
+                        const selectedColor = btn.dataset.color;
                         colorPickerModal.style.display = 'none';
+
+                        if (typeof onSelected === 'function') {
+                            onSelected(selectedColor);
+                            return;
+                        }
+
+                        currentColor = selectedColor;
                         waitingForColorPick = false;
                         playerCanPlay = true;
                         updateStatus(t('colorChanged', { color: t(currentColor) }));
@@ -1143,6 +1585,12 @@
                         
                         setTimeout(() => {
                             handleSpecialCard(card);
+                            if (isMultiplayerHost() && isMultiplayerActive()) {
+                                syncMultiplayerState({
+                                    reason: 'color',
+                                    status: { key: 'colorChanged', params: { color: t(currentColor) } }
+                                });
+                            }
                         }, 500);
                     };
                 });
@@ -1193,7 +1641,8 @@
                 }
                 
                 const cardText = amount > 1 ? t('cards') : t('card');
-                updateStatus(`${player === 'player' ? t('youDraw') : t('aiDraws')} ${amount} ${cardText}!`);
+                const drawLabel = player === 'player' ? t('youDraw') : opponentText('Draws');
+                updateStatus(`${drawLabel} ${amount} ${cardText}!`);
                 render();
                 return drawnCards;
             }
@@ -1211,17 +1660,29 @@
             function endGame(winner) {
                 gameActive = false;
                 playerCanPlay = false;
-                const message = winner === 'player' ? t('youWin') : t('aiWins');
+                waitingForColorPick = false;
+                const message = winner === 'player' ? t('youWin') : opponentText('Wins');
                 if (winner === 'player') {
                     playerWinCount += 1;
                     multiplayerManager.updateScore(playerWinCount);
                 }
                 updateStatus(message);
                 render();
+                if (isMultiplayerHost() && isMultiplayerActive()) {
+                    syncMultiplayerState({ reason: 'end', winner });
+                }
             }
             
             function onDrawPileClick() {
                 if (!gameActive || currentPlayer !== 'player' || !playerCanPlay || waitingForColorPick) {
+                    return;
+                }
+
+                if (isMultiplayerGuest() && isMultiplayerActive()) {
+                    multiplayerManager.sendMessage('uno:drawCard', {}, { target: mpState.remotePlayerId });
+                    playerCanPlay = false;
+                    updateStatus(t('waitingForHost'));
+                    render();
                     return;
                 }
 
@@ -1238,14 +1699,17 @@
                             updateStatus(t('canPlayDrawn'));
                             playerCanPlay = true;
                             render();
+                            if (isMultiplayerHost() && isMultiplayerActive()) {
+                                syncMultiplayerState({ reason: 'drawPlayable', status: { key: 'canPlayDrawn' } });
+                            }
                         } else {
                             updateStatus(t('cannotPlayDrawn'));
-                            setTimeout(() => switchTurn(), 1000);
+                            setTimeout(() => switchTurn({ statusKey: 'cannotPlayDrawn' }), 1000);
                         }
                     }, 1000);
                 } else {
                     updateStatus(t('noCardsToDraw'));
-                    setTimeout(() => switchTurn(), 1000);
+                    setTimeout(() => switchTurn({ statusKey: 'noCardsToDraw' }), 1000);
                 }
             }
             
@@ -1282,7 +1746,7 @@
             }
             
             function aiTurn() {
-                if (!gameActive || currentPlayer !== 'ai') return;
+                if (!gameActive || currentPlayer !== 'ai' || isMultiplayerActive()) return;
 
                 // Find playable cards
                 const playableCards = [];
@@ -1418,20 +1882,20 @@
                     }
                     
                     const chosen = playableCards[chosenIndex];
-                    updateStatus(`${t('aiPlays')} ${getCardDisplay(chosen.card)}...`);
+                    updateStatus(`${opponentText('Plays')} ${getCardDisplay(chosen.card)}...`);
                     
                     setTimeout(() => {
                         playCard(chosen.card, 'ai', chosen.index);
                     }, 1000);
                 } else {
                     // AI must draw
-                    updateStatus(t('aiDrawing'));
+                    updateStatus(opponentText('Drawing'));
                     setTimeout(() => {
                         const drawnCards = drawCards('ai', 1);
                         
                         if (drawnCards.length > 0 && isPlayable(drawnCards[0])) {
                             setTimeout(() => {
-                                updateStatus(t('aiPlaysDrawn'));
+                                updateStatus(opponentText('PlaysDrawn'));
                                 playCard(drawnCards[0], 'ai', aiHand.length - 1);
                             }, 1000);
                         } else {
@@ -1502,7 +1966,7 @@
             }
             
             // Event listeners
-            newGameBtn.addEventListener('click', startGame);
+            newGameBtn.addEventListener('click', handleNewGameClick);
             drawPileElement.addEventListener('click', onDrawPileClick);
             
             // Initialize
@@ -1519,6 +1983,7 @@
             difficultyDisplay.textContent = t(currentDifficulty);
             
             createBackgroundParticles();
+            setupMultiplayerIntegration();
             updateUILanguage();
             startGame();
         });
