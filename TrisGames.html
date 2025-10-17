@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -682,15 +682,15 @@
         <div class="game-container">
             <!-- Language Selector -->
             <div class="language-selector">
-                <button class="lang-btn active" onclick="setLanguage('en', event)">🇬🇧 EN</button>
-                <button class="lang-btn" onclick="setLanguage('zh', event)">🇨🇳 中文</button>
+                <button class="lang-btn active" onclick="setLanguage('en', event)">≡ƒç¼≡ƒçº EN</button>
+                <button class="lang-btn" onclick="setLanguage('zh', event)">≡ƒç¿≡ƒç│ Σ╕¡µûç</button>
             </div>
 
-            <h1 data-i18n="title">⚡ TRIS GAME ⚡</h1>
+            <h1 data-i18n="title">ΓÜí TRIS GAME ΓÜí</h1>
             
             <div class="mode-selector">
-                <button class="mode-btn active" onclick="setGameMode('pvp', event)" data-i18n="mode.pvp">👥 2 Players</button>
-                <button class="mode-btn" onclick="setGameMode('ai', event)" data-i18n="mode.ai">🤖 VS AI</button>
+                <button class="mode-btn active" onclick="setGameMode('pvp', event)" data-i18n="mode.pvp">≡ƒæÑ 2 Players</button>
+                <button class="mode-btn" onclick="setGameMode('ai', event)" data-i18n="mode.ai">≡ƒñû VS AI</button>
             </div>
 
             <div class="difficulty-selector" id="difficultySelector" style="display: none;">
@@ -725,7 +725,7 @@
                 <button class="btn-primary" onclick="resetGame()" data-i18n="btn.newGame">New Game</button>
                 <button class="btn-secondary" onclick="resetScore()" data-i18n="btn.resetScore">Reset Score</button>
                 <button class="btn-rules" onclick="showRules()" data-i18n="btn.rules">Rules</button>
-                <button class="btn-theme" id="themeToggle" onclick="toggleTheme()">🌙 Dark</button>
+                <button class="btn-theme" id="themeToggle" onclick="toggleTheme()">≡ƒîÖ Dark</button>
             </div>
         </div>
 
@@ -784,7 +784,7 @@
             <p data-i18n="rules.2">2. Players take turns placing X or O.</p>
             <p data-i18n="rules.3">3. The first to get 3 in a row wins.</p>
             <p data-i18n="rules.4">4. If all cells are filled without a winner, it's a draw.</p>
-            <p data-i18n="rules.5">Have fun! 🎮</p>
+            <p data-i18n="rules.5">Have fun! ≡ƒÄ«</p>
         </div>
     </div>
 
@@ -794,10 +794,10 @@
         // Translations
         const translations = {
             en: {
-                title: "⚡ TRIS GAME ⚡",
+                title: "ΓÜí TRIS GAME ΓÜí",
                 mode: {
-                    pvp: "👥 2 Players",
-                    ai: "🤖 VS AI"
+                    pvp: "≡ƒæÑ 2 Players",
+                    ai: "≡ƒñû VS AI"
                 },
                 diff: {
                     novice: "Novice",
@@ -824,11 +824,11 @@
                     turnO: "Player O Turn",
                     yourTurn: "Your Turn",
                     aiThinking: "AI Thinking...",
-                    winX: "🎉 Player X Wins!",
-                    winO: "🎉 Player O Wins!",
-                    winPlayer: "🎉 You Win!",
-                    winAI: "🤖 AI Wins!",
-                    draw: "🤝 Draw!"
+                    winX: "≡ƒÄë Player X Wins!",
+                    winO: "≡ƒÄë Player O Wins!",
+                    winPlayer: "≡ƒÄë You Win!",
+                    winAI: "≡ƒñû AI Wins!",
+                    draw: "≡ƒñ¥ Draw!"
                 },
                 btn: {
                     newGame: "New Game",
@@ -850,75 +850,75 @@
                     2: "2. Players take turns placing X or O.",
                     3: "3. The first to get 3 in a row wins.",
                     4: "4. If all cells are filled without a winner, it's a draw.",
-                    5: "Have fun! 🎮"
+                    5: "Have fun! ≡ƒÄ«"
                 },
                 theme: {
-                    dark: "🌙 Dark",
-                    light: "☀️ Light"
+                    dark: "≡ƒîÖ Dark",
+                    light: "ΓÿÇ∩╕Å Light"
                 }
             },
             zh: {
-                title: "⚡ 井字游戏 ⚡",
+                title: "ΓÜí Σ║òσ¡ùµ╕╕µêÅ ΓÜí",
                 mode: {
-                    pvp: "👥 双人对战",
-                    ai: "🤖 人机对战"
+                    pvp: "≡ƒæÑ σÅîΣ║║σ»╣µêÿ",
+                    ai: "≡ƒñû Σ║║µ£║σ»╣µêÿ"
                 },
                 diff: {
-                    novice: "新手",
-                    easy: "简单",
-                    medium: "中等",
-                    hard: "困难",
-                    expert: "专家",
-                    impossible: "不可能"
+                    novice: "µû░µëï",
+                    easy: "τ«Çσìò",
+                    medium: "Σ╕¡τ¡ë",
+                    hard: "σ¢░ΘÜ╛",
+                    expert: "Σ╕ôσ«╢",
+                    impossible: "Σ╕ìσÅ»Φâ╜"
                 },
                 starter: {
-                    x: "作为 X 开始",
-                    o: "作为 O 开始"
+                    x: "Σ╜£Σ╕║ X σ╝Çσºï",
+                    o: "Σ╜£Σ╕║ O σ╝Çσºï"
                 },
                 score: {
-                    player: "你",
-                    opponent: "对手",
-                    playerX: "玩家 X",
-                    playerO: "玩家 O",
-                    draws: "平局",
-                    ai: "人工智能"
+                    player: "Σ╜á",
+                    opponent: "σ»╣µëï",
+                    playerX: "τÄ⌐σ«╢ X",
+                    playerO: "τÄ⌐σ«╢ O",
+                    draws: "σ╣│σ▒Ç",
+                    ai: "Σ║║σ╖ÑµÖ║Φâ╜"
                 },
                 status: {
-                    turnX: "玩家 X 回合",
-                    turnO: "玩家 O 回合",
-                    yourTurn: "你的回合",
-                    aiThinking: "AI 思考中...",
-                    winX: "🎉 玩家 X 获胜！",
-                    winO: "🎉 玩家 O 获胜！",
-                    winPlayer: "🎉 你赢了！",
-                    winAI: "🤖 AI 获胜！",
-                    draw: "🤝 平局！"
+                    turnX: "τÄ⌐σ«╢ X σ¢₧σÉê",
+                    turnO: "τÄ⌐σ«╢ O σ¢₧σÉê",
+                    yourTurn: "Σ╜áτÜäσ¢₧σÉê",
+                    aiThinking: "AI µÇ¥ΦÇâΣ╕¡...",
+                    winX: "≡ƒÄë τÄ⌐σ«╢ X ΦÄ╖Φâ£∩╝ü",
+                    winO: "≡ƒÄë τÄ⌐σ«╢ O ΦÄ╖Φâ£∩╝ü",
+                    winPlayer: "≡ƒÄë Σ╜áΦ╡óΣ║å∩╝ü",
+                    winAI: "≡ƒñû AI ΦÄ╖Φâ£∩╝ü",
+                    draw: "≡ƒñ¥ σ╣│σ▒Ç∩╝ü"
                 },
                 btn: {
-                    newGame: "新游戏",
-                    resetScore: "重置分数",
-                    rules: "规则"
+                    newGame: "µû░µ╕╕µêÅ",
+                    resetScore: "Θçìτ╜«σêåµò░",
+                    rules: "ΦºäσêÖ"
                 },
                 stats: {
-                    title: "游戏统计",
-                    totalGames: "总场次：",
-                    winRate: "胜率：",
-                    currentStreak: "当前连胜：",
-                    bestStreak: "最佳连胜：",
-                    avgTime: "平均时间：",
-                    fastestWin: "最快获胜："
+                    title: "µ╕╕µêÅτ╗ƒΦ«í",
+                    totalGames: "µÇ╗σ£║µ¼í∩╝Ü",
+                    winRate: "Φâ£τÄç∩╝Ü",
+                    currentStreak: "σ╜ôσëìΦ┐₧Φâ£∩╝Ü",
+                    bestStreak: "µ£ÇΣ╜│Φ┐₧Φâ£∩╝Ü",
+                    avgTime: "σ╣│σ¥çµù╢Θù┤∩╝Ü",
+                    fastestWin: "µ£Çσ┐½ΦÄ╖Φâ£∩╝Ü"
                 },
                 rules: {
-                    title: "井字游戏规则",
-                    1: "1. 游戏在3x3的网格上进行。",
-                    2: "2. 玩家轮流放置X或O。",
-                    3: "3. 第一个连成3个的获胜。",
-                    4: "4. 如果所有格子都填满而没有赢家，则为平局。",
-                    5: "玩得开心！🎮"
+                    title: "Σ║òσ¡ùµ╕╕µêÅΦºäσêÖ",
+                    1: "1. µ╕╕µêÅσ£¿3x3τÜäτ╜æµá╝Σ╕èΦ┐¢ΦíîπÇé",
+                    2: "2. τÄ⌐σ«╢Φ╜«µ╡üµö╛τ╜«XµêûOπÇé",
+                    3: "3. τ¼¼Σ╕ÇΣ╕¬Φ┐₧µêÉ3Σ╕¬τÜäΦÄ╖Φâ£πÇé",
+                    4: "4. σªéµ₧£µëÇµ£ëµá╝σ¡ÉΘâ╜σí½µ╗íΦÇîµ▓íµ£ëΦ╡óσ«╢∩╝îσêÖΣ╕║σ╣│σ▒ÇπÇé",
+                    5: "τÄ⌐σ╛ùσ╝Çσ┐â∩╝ü≡ƒÄ«"
                 },
                 theme: {
-                    dark: "🌙 深色",
-                    light: "☀️ 浅色"
+                    dark: "≡ƒîÖ µ╖▒Φë▓",
+                    light: "ΓÿÇ∩╕Å µ╡àΦë▓"
                 }
             }
         };
@@ -948,15 +948,17 @@
         const multiplayerManager = window.createMultiplayerManager({
             gameId: 'tris',
             scoreLabel: 'Vittorie',
+            maxPlayers: 2,
             initialScore: scores.player
-        });
+        );
+        window.trisMultiplayerManager = multiplayerManager;
 
         function warnMultiplayerUnsupported() {
             if (!multiplayerManager || typeof multiplayerManager.on !== 'function') {
                 return;
             }
             const notice = document.createElement('div');
-            notice.textContent = 'Modalità multiplayer in tempo reale non ancora disponibile per questo gioco: la sessione condivide solo la classifica.';
+            notice.textContent = 'Modalit├á multiplayer in tempo reale non ancora disponibile per questo gioco: la sessione condivide solo la classifica.';
             notice.style.position = 'fixed';
             notice.style.bottom = '20px';
             notice.style.left = '20px';
@@ -1100,7 +1102,7 @@
             document.querySelectorAll('.lang-btn').forEach(btn => {
                 btn.classList.remove('active');
                 if ((savedLanguage === 'en' && btn.textContent.includes('EN')) ||
-                    (savedLanguage === 'zh' && btn.textContent.includes('中文'))) {
+                    (savedLanguage === 'zh' && btn.textContent.includes('Σ╕¡µûç'))) {
                     btn.classList.add('active');
                 }
             });
@@ -1589,3 +1591,8 @@
     </div>
 </body>
 </html>
+
+
+
+
+
