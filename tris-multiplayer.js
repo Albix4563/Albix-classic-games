@@ -177,8 +177,8 @@
             renderBoardFromState();
             original.updateScoreDisplay.call(window);
             original.updateStatsDisplay.call(window);
-            original.updateScoreLabels.call(window);
-            original.updateStatus.call(window);
+            window.updateScoreLabels();
+            window.updateStatus();
             original.updateActiveScore.call(window);
         }
 
@@ -482,5 +482,9 @@
         ensureScoreboardSync();
     });
 })();
+
+
+
+
 
 
