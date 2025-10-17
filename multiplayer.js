@@ -46,6 +46,12 @@ body.light-theme .mp-board{background:rgba(255,255,255,0.95);color:#222;border-c
 body.light-theme .mp-player{background:rgba(0,0,0,0.06);}
 .mp-player.me{background:rgba(102,126,234,0.4);}
 body.light-theme .mp-player.me{background:rgba(102,126,234,0.25);}
+.mp-player .mp-player-main{display:flex;flex-direction:column;gap:2px;flex:1;}
+.mp-player-name{font-weight:600;}
+.mp-player-score{font-size:12px;opacity:0.85;}
+.mp-kick-btn{margin-left:8px;padding:4px 8px;border-radius:8px;border:none;background:#b33939;color:#fff;font-size:11px;font-weight:600;cursor:pointer;}
+.mp-kick-btn:hover{opacity:0.85;}
+.mp-kick-btn:disabled{opacity:0.5;cursor:not-allowed;}
 .mp-hidden{display:none !important;}
 @media (max-width:640px){
     .mp-btn{bottom:20px;top:auto;}
@@ -80,6 +86,7 @@ body.light-theme .mp-player.me{background:rgba(102,126,234,0.25);}
             this.gameId = config.gameId || 'albix-game';
             this.scoreLabel = config.scoreLabel || 'Score';
             this.score = typeof config.initialScore === 'number' ? config.initialScore : 0;
+            this.maxPlayers = typeof config.maxPlayers === 'number' && config.maxPlayers > 0 ? config.maxPlayers : Infinity;
             this.players = new Map();
             this.connections = new Map();
             this.peer = null;
@@ -353,6 +360,15 @@ body.light-theme .mp-player.me{background:rgba(102,126,234,0.25);}
             switch (type) {
                 case 'join':
                     if (this.isHost && payload) {
+                        const alreadyConnected = this.players.has(payload.id);
+                        const projectedCount = alreadyConnected ? this.players.size : this.players.size + 1;
+                        if (projectedCount > this.maxPlayers) {
+                            this.send(conn, { type: 'kick', payload: { reason: 'Sessione piena.' } });
+                            setTimeout(() => {
+                                try { conn.close(); } catch (_) {}
+                            }, 20);
+                            return;
+                        }
                         this.addOrUpdatePlayer(payload.id, payload.nickname, payload.score);
                         this.send(conn, {
                             type: 'sessionState',
@@ -360,6 +376,7 @@ body.light-theme .mp-player.me{background:rgba(102,126,234,0.25);}
                                 sessionId: this.sessionId,
                                 players: this.serializePlayers(),
                                 scoreLabel: this.scoreLabel,
+                                maxPlayers: this.maxPlayers,
                             },
                         });
                         this.broadcast({ type: 'playerJoined', payload }, payload.id);
@@ -406,6 +423,13 @@ body.light-theme .mp-player.me{background:rgba(102,126,234,0.25);}
                     this.setStatus('L\'host ha chiuso la sessione.');
                     this.disconnect();
                     this.emit('hostClosing', payload || {});
+                    break;
+                case 'kick':
+                    if (payload && !this.isHost) {
+                        this.setStatus(payload.reason || 'Sei stato rimosso dalla sessione.');
+                        this.emit('kicked', { reason: payload.reason || 'removed', id: senderId });
+                        setTimeout(() => this.disconnect(), 50);
+                    }
                     break;
                 default:
                     handled = false;
@@ -561,8 +585,55 @@ body.light-theme .mp-player.me{background:rgba(102,126,234,0.25);}
             }
         }
 
+        kickPlayer(playerId, options = {}) {
+            if (!this.isHost || !playerId || playerId === this.localPlayerId) return;
+            const reason = options.reason || 'Sei stato rimosso dalla sessione.';
+            if (this.connections.has(playerId)) {
+                const conn = this.connections.get(playerId);
+                this.send(conn, { type: 'kick', payload: { reason } });
+                try { conn.close(); } catch (_) {}
+                this.connections.delete(playerId);
+            }
+            if (this.players.has(playerId)) {
+                this.players.delete(playerId);
+                this.renderPlayers();
+            }
+            this.broadcast({ type: 'playerLeft', payload: { id: playerId, reason } });
+            this.emit('playerKicked', { id: playerId, reason });
+        }
+
+        scheduleKick(playerId, options = {}) {
+            setTimeout(() => this.kickPlayer(playerId, options), 25);
+        }
+
+        setPlayerScore(playerId, score, nickname = null) {
+            if (!this.isHost || !playerId) return;
+            const safeScore = typeof score === 'number' && !Number.isNaN(score) ? score : 0;
+            const existing = this.players.get(playerId);
+            const safeName = nickname ? cleanName(nickname) : (existing ? existing.nickname : 'Player');
+            this.addOrUpdatePlayer(playerId, safeName, safeScore);
+            if (playerId === this.localPlayerId) {
+                this.score = safeScore;
+            }
+            this.renderPlayers();
+            const updateMessage = {
+                type: 'scoreUpdate',
+                payload: {
+                    id: playerId,
+                    nickname: safeName,
+                    score: safeScore,
+                },
+            };
+            this.connections.forEach((connection) => {
+                this.send(connection, updateMessage);
+            });
+        }
+
         applySession(payload) {
             this.sessionId = payload.sessionId || this.sessionId;
+            if (typeof payload.maxPlayers === 'number' && payload.maxPlayers > 0) {
+                this.maxPlayers = payload.maxPlayers;
+            }
             this.players.clear();
             (payload.players || []).forEach((player) => {
                 this.players.set(player.id, {
