@@ -737,7 +737,8 @@
                 medium: 'Medium',
                 hard: 'Hard',
                 darkTheme: '🌙 Dark',
-                lightTheme: '☀️ Light'
+                lightTheme: '☀️ Light',
+                mpWaitTurn: 'Wait for opponent\'s move'
             },
             zh: {
                 title: '皇家国际象棋',
@@ -763,7 +764,8 @@
                 medium: '中等',
                 hard: '困难',
                 darkTheme: '🌙 深色',
-                lightTheme: '☀️ 浅色'
+                lightTheme: '☀️ 浅色',
+                mpWaitTurn: '等待对手走棋'
             }
         };
 
@@ -1250,6 +1252,34 @@
             
             // Switch players
             currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+            
+            // Check for game end conditions (checkmate/stalemate)
+            const whiteInCheck = isInCheck('white');
+            const blackInCheck = isInCheck('black');
+            const whiteHasMoves = whiteInCheck ? !isCheckmate('white') : !isStalemate('white');
+            const blackHasMoves = blackInCheck ? !isCheckmate('black') : !isStalemate('black');
+            
+            // Update game active status based on checkmate/stalemate
+            if ((whiteInCheck && !whiteHasMoves) || (blackInCheck && !blackHasMoves)) {
+                // Checkmate condition - game ends
+                gameActive = false;
+                // Update scores based on who won
+                if (whiteInCheck && !whiteHasMoves) {
+                    // White is in checkmate, black wins
+                    scores.black++;
+                } else if (blackInCheck && !blackHasMoves) {
+                    // Black is in checkmate, white wins
+                    scores.white++;
+                }
+            } else if (!whiteInCheck && !whiteHasMoves) {
+                // White stalemate - game ends in draw
+                gameActive = false;
+                scores.draw++;
+            } else if (!blackInCheck && !blackHasMoves) {
+                // Black stalemate - game ends in draw
+                gameActive = false;
+                scores.draw++;
+            }
             
             // Update display
             updateGameStatus();

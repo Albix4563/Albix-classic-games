@@ -225,46 +225,56 @@
 
         window.handleSquareClick = function(row, col) {
             if (mp.active) {
-                if (window.gameActive && mp.localColor === window.currentPlayer) {
-                    // Check if this is a valid move according to multiplayer rules
-                    const piece = window.board[row][col];
-                    
-                    // If no square is selected
-                    if (!window.selectedSquare) {
-                        if (piece && piece.color === mp.localColor) {
-                            // Select the piece
-                            window.selectedSquare = { row, col };
-                            window.possibleMoves = window.getPossibleMoves(row, col);
-                            window.renderBoard();
-                        }
-                        return;
-                    }
-                    
-                    // Check if the clicked square is a possible move
-                    const moveValid = window.possibleMoves.some(move => move.row === row && move.col === col);
-                    if (moveValid) {
-                        // Send move to opponent
-                        sendAction('move', { 
-                            fromRow: window.selectedSquare.row, 
-                            fromCol: window.selectedSquare.col, 
-                            toRow: row, 
-                            toCol: col 
-                        });
-                        // Clear selection after sending
-                        window.selectedSquare = null;
-                        window.possibleMoves = [];
-                        window.renderBoard();
-                    } else if (piece && piece.color === mp.localColor) {
-                        // Select a different piece of the same color
+                // Check if it's the local player's turn
+                if (!window.gameActive) {
+                    return; // Game is not active, no moves allowed
+                }
+                
+                if (mp.localColor !== window.currentPlayer) {
+                    // It's not the local player's turn, show appropriate message
+                    const t = window.translations && window.translations[window.currentLanguage] || window.translations.en;
+                    document.getElementById('gameStatus').textContent = t.mpWaitTurn || 'Wait for opponent\'s move';
+                    return;
+                }
+                
+                // Check if this is a valid move according to multiplayer rules
+                const piece = window.board[row][col];
+                
+                // If no square is selected
+                if (!window.selectedSquare) {
+                    if (piece && piece.color === mp.localColor) {
+                        // Select the piece
                         window.selectedSquare = { row, col };
                         window.possibleMoves = window.getPossibleMoves(row, col);
                         window.renderBoard();
-                    } else {
-                        // Deselect if clicking elsewhere
-                        window.selectedSquare = null;
-                        window.possibleMoves = [];
-                        window.renderBoard();
                     }
+                    return;
+                }
+                
+                // Check if the clicked square is a possible move
+                const moveValid = window.possibleMoves.some(move => move.row === row && move.col === col);
+                if (moveValid) {
+                    // Send move to opponent
+                    sendAction('move', { 
+                        fromRow: window.selectedSquare.row, 
+                        fromCol: window.selectedSquare.col, 
+                        toRow: row, 
+                        toCol: col 
+                    });
+                    // Clear selection after sending
+                    window.selectedSquare = null;
+                    window.possibleMoves = [];
+                    window.renderBoard();
+                } else if (piece && piece.color === mp.localColor) {
+                    // Select a different piece of the same color
+                    window.selectedSquare = { row, col };
+                    window.possibleMoves = window.getPossibleMoves(row, col);
+                    window.renderBoard();
+                } else {
+                    // Deselect if clicking elsewhere
+                    window.selectedSquare = null;
+                    window.possibleMoves = [];
+                    window.renderBoard();
                 }
                 return;
             }
@@ -330,13 +340,41 @@
                 };
             }
             
-            // Check for pawn promotion
+            // Check for pawn promotion - ensure it's handled properly
             if (piece.type === 'pawn' && (toRow === 0 || toRow === 7)) {
                 window.board[toRow][toCol] = { ...piece, type: 'queen' };
             }
             
             // Switch players
             window.currentPlayer = window.currentPlayer === 'white' ? 'black' : 'white';
+            
+            // Check for game end conditions (checkmate/stalemate)
+            const whiteInCheck = window.isInCheck('white');
+            const blackInCheck = window.isInCheck('black');
+            const whiteHasMoves = whiteInCheck ? !window.isCheckmate('white') : !window.isStalemate('white');
+            const blackHasMoves = blackInCheck ? !window.isCheckmate('black') : !window.isStalemate('black');
+            
+            // Update game active status based on checkmate/stalemate
+            if ((whiteInCheck && !whiteHasMoves) || (blackInCheck && !blackHasMoves)) {
+                // Checkmate condition - game ends
+                window.gameActive = false;
+                // Update scores based on who won
+                if (whiteInCheck && !whiteHasMoves) {
+                    // White is in checkmate, black wins
+                    window.scores.black++;
+                } else if (blackInCheck && !blackHasMoves) {
+                    // Black is in checkmate, white wins
+                    window.scores.white++;
+                }
+            } else if (!whiteInCheck && !whiteHasMoves) {
+                // White stalemate - game ends in draw
+                window.gameActive = false;
+                window.scores.draw++;
+            } else if (!blackInCheck && !blackHasMoves) {
+                // Black stalemate - game ends in draw
+                window.gameActive = false;
+                window.scores.draw++;
+            }
             
             // Update display
             window.updateGameStatus();
@@ -410,7 +448,7 @@
                         document.getElementById('gameStatus').textContent = t.whiteWins || 'White wins!';
                     } 
                     // Check for stalemate
-                    else if (window.isStalemate(window.currentPlayer)) {
+                    else if (window.isStalemate('white') || window.isStalemate('black')) {
                         document.getElementById('gameStatus').textContent = t.stalemate || 'Stalemate!';
                     } 
                     // Draw by other conditions
@@ -488,6 +526,9 @@
                     // Client is always black when joining
                     mp.localColor = 'black';
                     mp.remoteColor = 'white';
+                    // Reset player colors to match the actual game state
+                    mp.localColor = 'black';
+                    mp.remoteColor = 'white';
                 }
                 
                 // Update UI to reflect colors
@@ -498,6 +539,10 @@
                     document.getElementById('scoreBlackContainer').classList.add('active');
                     document.getElementById('scoreWhiteContainer').classList.remove('active');
                 }
+                
+                // Ensure the UI properly reflects current game state
+                window.updateGameStatus();
+                window.updateScoreDisplay();
             } else {
                 handleOpponentLeft('opponentLeft');
             }
@@ -519,6 +564,7 @@
                             if (!Number.isInteger(fromRow) || !Number.isInteger(fromCol) || 
                                 !Number.isInteger(toRow) || !Number.isInteger(toCol)) {
                                 // Send error
+                                manager.sendMessage('chess:error', { key: 'invalidMove' }, { target: mp.remotePlayerId });
                                 return;
                             }
                             
@@ -527,6 +573,7 @@
                                 !window.board[fromRow][fromCol] || 
                                 window.board[fromRow][fromCol].color !== mp.remoteColor) {
                                 // Send error
+                                manager.sendMessage('chess:error', { key: 'invalidMove' }, { target: mp.remotePlayerId });
                                 return;
                             }
                             
@@ -537,6 +584,7 @@
                             
                             if (!isValid) {
                                 // Send error
+                                manager.sendMessage('chess:error', { key: 'invalidMove' }, { target: mp.remotePlayerId });
                                 return;
                             }
                             
@@ -570,6 +618,11 @@
                         (t[payload.key] || 'Action not allowed.') : 
                         'Action not allowed.';
                     document.getElementById('gameStatus').textContent = text;
+                    // Reset the game state to avoid confusion
+                    if (window.currentPlayer !== mp.localColor) {
+                        // It's not our turn, so we can't make moves anyway
+                        window.updateGameStatus();
+                    }
                     break;
                 }
                 default:
